@@ -17,19 +17,19 @@ export function HBarChart({ rows }: { rows: HBarRow[] }) {
         {rows.map((r) => (
           <div key={r.key} className="flex items-center gap-3">
             <span className="w-28 shrink-0 truncate text-[12.5px] text-text-2 sm:w-36">{r.label}</span>
-            <div className="relative h-6 flex-1">
+            <div className="relative h-6 min-w-0 flex-1">
               <div
                 className={`absolute inset-y-0 left-0 rounded-r-sm ${r.colorClass} transition-all duration-300`}
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
-              <span className="absolute inset-y-0 flex items-center pl-2 font-mono text-[11px] font-bold text-text-1 tabular-nums" style={{ left: `${(r.value / max) * 100}%` }}>
-                {formatCompactBRL(r.value)}
-              </span>
             </div>
+            <span className="w-20 shrink-0 text-right font-mono text-[11px] font-bold text-text-1 tabular-nums">
+              {formatCompactBRL(r.value)}
+            </span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex justify-between border-t border-border pl-[7.5rem] pt-2 sm:pl-[9.5rem]">
+      <div className="mt-3 flex justify-between gap-3 border-t border-border pl-[7.5rem] pr-[5.75rem] pt-2 sm:pl-[9.5rem]">
         {ticks.map((t, i) => (
           <span key={i} className="text-[10px] text-text-3 tabular-nums">
             {formatCompactBRL(t)}
