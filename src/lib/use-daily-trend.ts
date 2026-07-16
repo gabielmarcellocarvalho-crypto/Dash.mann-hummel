@@ -10,10 +10,17 @@ export interface RevenueTrendPoint {
   anterior: number;
 }
 
+interface ChannelDailyState {
+  status: "loading" | "success" | "error";
+  current: DailyPoint[];
+  previous: DailyPoint[];
+}
+
 interface DailyTrendState {
-  loading: boolean;
+  loading: boolean; // true só enquanto NENHUM canal ainda resolveu
   points: RevenueTrendPoint[];
   channelsWithData: ChannelId[];
+  channelsPending: ChannelId[];
   channelsFailed: ChannelId[];
 }
 
@@ -56,64 +63,72 @@ function revenueByDate(seriesList: DailyPoint[][]): Map<string, number> {
   return map;
 }
 
+function buildPoints(
+  range: DateRange,
+  previousRange: DateRange,
+  channelStates: Record<string, ChannelDailyState>,
+): RevenueTrendPoint[] {
+  const ready = Object.values(channelStates).filter((s) => s.status === "success");
+  const currentByDate = revenueByDate(ready.map((s) => s.current));
+  const previousByDate = revenueByDate(ready.map((s) => s.previous));
+
+  const currentDates = enumerateDates(range);
+  const previousDates = enumerateDates(previousRange);
+
+  return currentDates.map((date, i) => {
+    const [, m, d] = date.split("-");
+    return {
+      date: `${d}/${m}`,
+      atual: currentByDate.get(date) ?? 0,
+      anterior: previousByDate.get(previousDates[i]) ?? 0,
+    };
+  });
+}
+
 // Só soma canais com revenueTracked === true (MELI/Amazon) — igual à regra
 // usada no resto do dashboard, pra não misturar receita real com o "R$0"
 // de canais sem conversão de valor configurada (Google/Meta).
+//
+// Cada canal resolve de forma INDEPENDENTE (current+previous juntos, mas sem
+// bloquear os outros canais) — se a Amazon estiver lenta/fora do ar, o
+// gráfico já aparece com o MELI assim que ele responder, em vez de ficar
+// "carregando" por até ~2min esperando todo mundo responder junto.
 export function useDailyTrend(range: DateRange, channels: ChannelId[]): DailyTrendState {
   const channelsKey = channels.join(",");
   const requestKey = `${range.dateFrom}|${range.dateTo}|${channelsKey}`;
 
-  const [state, setState] = useState<DailyTrendState>({
-    loading: true,
-    points: [],
-    channelsWithData: [],
-    channelsFailed: [],
-  });
+  const relevantChannels = (channelsKey.split(",").filter(Boolean) as ChannelId[]).filter((c) => REVENUE_TRACKED[c]);
+
+  const [channelStates, setChannelStates] = useState<Record<string, ChannelDailyState>>({});
   const [appliedKey, setAppliedKey] = useState(requestKey);
 
-  // Padrão "ajustar estado durante a renderização": volta pro loading assim
-  // que período/canais mudam, sem chamar setState direto no corpo do efeito.
+  // Padrão "ajustar estado durante a renderização": reseta assim que
+  // período/canais mudam, sem chamar setState direto no corpo do efeito.
   if (appliedKey !== requestKey) {
     setAppliedKey(requestKey);
-    setState((prev) => ({ ...prev, loading: true }));
+    const reset: Record<string, ChannelDailyState> = {};
+    for (const c of relevantChannels) reset[c] = { status: "loading", current: [], previous: [] };
+    setChannelStates(reset);
   }
 
   useEffect(() => {
     let cancelled = false;
-
-    const activeChannels = (channelsKey.split(",").filter(Boolean) as ChannelId[]).filter(
-      (c) => REVENUE_TRACKED[c],
-    );
+    const activeChannels = (channelsKey.split(",").filter(Boolean) as ChannelId[]).filter((c) => REVENUE_TRACKED[c]);
     const previousRange = previousEquivalentRange(range);
 
-    Promise.all([
-      Promise.all(activeChannels.map((c) => fetchChannelSeries(c, range))),
-      Promise.all(activeChannels.map((c) => fetchChannelSeries(c, previousRange))),
-    ]).then(([currentResults, previousResults]) => {
-      if (cancelled) return;
-
-      const channelsWithData = activeChannels.filter((_, i) => currentResults[i] !== null);
-      const channelsFailed = activeChannels.filter((_, i) => currentResults[i] === null);
-
-      const currentSeries = currentResults.filter((r): r is DailyPoint[] => r !== null);
-      const previousSeries = previousResults.filter((r): r is DailyPoint[] => r !== null);
-
-      const currentByDate = revenueByDate(currentSeries);
-      const previousByDate = revenueByDate(previousSeries);
-
-      const currentDates = enumerateDates(range);
-      const previousDates = enumerateDates(previousRange);
-
-      const points: RevenueTrendPoint[] = currentDates.map((date, i) => {
-        const [, m, d] = date.split("-");
-        return {
-          date: `${d}/${m}`,
-          atual: currentByDate.get(date) ?? 0,
-          anterior: previousByDate.get(previousDates[i]) ?? 0,
-        };
-      });
-
-      setState({ loading: false, points, channelsWithData, channelsFailed });
+    activeChannels.forEach((channelId) => {
+      Promise.all([fetchChannelSeries(channelId, range), fetchChannelSeries(channelId, previousRange)]).then(
+        ([current, previous]) => {
+          if (cancelled) return;
+          setChannelStates((prev) => ({
+            ...prev,
+            [channelId]:
+              current !== null && previous !== null
+                ? { status: "success", current, previous }
+                : { status: "error", current: [], previous: [] },
+          }));
+        },
+      );
     });
 
     return () => {
@@ -124,5 +139,18 @@ export function useDailyTrend(range: DateRange, channels: ChannelId[]): DailyTre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range.dateFrom, range.dateTo, channelsKey]);
 
-  return state;
+  const channelsWithData = relevantChannels.filter((c) => channelStates[c]?.status === "success");
+  const channelsPending = relevantChannels.filter((c) => !channelStates[c] || channelStates[c].status === "loading");
+  const channelsFailed = relevantChannels.filter((c) => channelStates[c]?.status === "error");
+
+  const previousRange = previousEquivalentRange(range);
+  const points = buildPoints(range, previousRange, channelStates);
+
+  return {
+    loading: relevantChannels.length > 0 && channelsWithData.length === 0 && channelsPending.length > 0,
+    points,
+    channelsWithData,
+    channelsPending,
+    channelsFailed,
+  };
 }

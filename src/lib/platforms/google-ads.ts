@@ -92,6 +92,7 @@ function mapRow(row: RawGoogleAdsRow): CampaignRow {
     roas: null,
     acos: null,
     revenueTracked: false,
+    units: 0,
   };
 }
 

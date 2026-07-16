@@ -56,6 +56,7 @@ export interface CampaignRow {
   roas: number | null;
   acos: number | null; // fração 0-1
   revenueTracked: boolean;
+  units: number; // unidades vendidas atribuídas — só > 0 quando revenueTracked
 }
 
 export interface ChannelSummary {
@@ -71,6 +72,7 @@ export interface ChannelSummary {
   campanhasAtivas: number;
   totalCampanhas: number;
   revenueTracked: boolean;
+  units: number;
 }
 
 export function summarizeCampaigns(channelId: ChannelId, campaigns: CampaignRow[]): ChannelSummary {
@@ -79,6 +81,7 @@ export function summarizeCampaigns(channelId: ChannelId, campaigns: CampaignRow[
   const receita = revenueTracked ? campaigns.reduce((sum, c) => sum + c.revenue, 0) : 0;
   const cliques = campaigns.reduce((sum, c) => sum + c.clicks, 0);
   const impressoes = campaigns.reduce((sum, c) => sum + c.impressions, 0);
+  const units = revenueTracked ? campaigns.reduce((sum, c) => sum + c.units, 0) : 0;
   const ativoStatuses = new Set(["ENABLED", "ACTIVE"]);
   const campanhasAtivas = campaigns.filter((c) => c.status && ativoStatuses.has(c.status.toUpperCase())).length;
 
@@ -95,5 +98,6 @@ export function summarizeCampaigns(channelId: ChannelId, campaigns: CampaignRow[
     campanhasAtivas,
     totalCampanhas: campaigns.length,
     revenueTracked,
+    units,
   };
 }

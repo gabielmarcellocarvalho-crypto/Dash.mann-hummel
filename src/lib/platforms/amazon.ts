@@ -24,6 +24,7 @@ export async function fetchAmazonCampaigns(range: DateRange): Promise<CampaignRo
     roas: c.roas,
     acos: c.acos,
     revenueTracked: true, // receita vem de vendas atribuídas reais reportadas pela Amazon
+    units: c.attributedUnitsOrdered30d,
   }));
 }
 

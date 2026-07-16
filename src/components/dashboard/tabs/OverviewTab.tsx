@@ -9,6 +9,7 @@ import { ProgressList } from "../ProgressList";
 import { AlertsStrip } from "../AlertsStrip";
 import { Highlights } from "../Highlights";
 import { ProductsTable } from "../ProductsTable";
+import { FunnelChart } from "../FunnelChart";
 import { CHANNELS, topProdutos } from "@/data/mock-dashboard";
 import { formatBRL2 } from "@/lib/format";
 import { compare } from "@/lib/compare";
@@ -43,6 +44,7 @@ export function OverviewTab() {
   const investimentoComReceita = revenueSummaries.reduce((sum, s) => sum + s.investimento, 0);
   const totalCliques = summaries.reduce((sum, s) => sum + s.cliques, 0);
   const totalImpressoes = summaries.reduce((sum, s) => sum + s.impressoes, 0);
+  const totalUnidades = revenueSummaries.reduce((sum, s) => sum + s.units, 0);
   const roasMedio = investimentoComReceita > 0 ? totalReceita / investimentoComReceita : 0;
   const cpcMedio = totalCliques > 0 ? totalInvestimento / totalCliques : 0;
 
@@ -188,6 +190,14 @@ export function OverviewTab() {
         ) : (
           <>
             <AreaLineChart data={dailyTrend.points} />
+            {dailyTrend.channelsPending.length > 0 && (
+              <p className="mt-3 text-[11px] text-text-3">
+                Ainda buscando{" "}
+                {dailyTrend.channelsPending.map((c) => CHANNELS.find((ch) => ch.id === c)!.name).join(", ")}
+                {dailyTrend.channelsPending.includes("amazon") && " (pode levar mais de um minuto)"} — o gráfico
+                atualiza sozinho quando chegar.
+              </p>
+            )}
             {dailyTrend.channelsFailed.length > 0 && (
               <p className="mt-3 text-[11px] text-text-3">
                 Não foi possível carregar a série diária de{" "}
@@ -196,6 +206,23 @@ export function OverviewTab() {
               </p>
             )}
           </>
+        )}
+      </Section>
+
+      <Section
+        title="Funil de Tráfego"
+        subtitle="Impressões e cliques de todos os canais selecionados · vendas só de MELI/Amazon (únicos com receita rastreada)"
+      >
+        {summaries.length === 0 ? (
+          <p className="py-6 text-center text-[12.5px] text-text-3">Aguardando dados…</p>
+        ) : (
+          <FunnelChart
+            stages={[
+              { key: "impressoes", label: "Impressões", value: totalImpressoes, display: totalImpressoes.toLocaleString("pt-BR") },
+              { key: "cliques", label: "Cliques", value: totalCliques, display: totalCliques.toLocaleString("pt-BR") },
+              { key: "vendas", label: "Vendas (unidades, MELI + Amazon)", value: totalUnidades, display: totalUnidades.toLocaleString("pt-BR") },
+            ]}
+          />
         )}
       </Section>
 

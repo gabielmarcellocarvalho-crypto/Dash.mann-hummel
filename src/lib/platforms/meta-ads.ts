@@ -108,6 +108,7 @@ export async function fetchMetaAdsCampaigns(range: DateRange): Promise<CampaignR
       roas: null,
       acos: null,
       revenueTracked: false,
+      units: 0,
     } satisfies CampaignRow;
   });
 }

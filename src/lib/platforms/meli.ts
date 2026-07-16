@@ -85,6 +85,7 @@ interface RawMeliCampaign {
     acos: number;
     roas: number;
     total_amount: number;
+    units_quantity: number;
   };
 }
 
@@ -105,6 +106,7 @@ function mapCampaign(row: RawMeliCampaign): CampaignRow {
     roas: m?.roas ?? null,
     acos: m ? m.acos / 100 : null,
     revenueTracked: true, // receita vem de vendas reais atribuídas pelo MELI
+    units: m?.units_quantity ?? 0,
   };
 }
 
