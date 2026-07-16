@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useDashboardData, type ChannelState } from "@/lib/use-dashboard-data";
+import { useDailyTrend, type DailyTrendState } from "@/lib/use-daily-trend";
 import { periodDateRange, rangeLabel } from "@/lib/platforms/period";
 import type { ChannelId, DateRange, Period } from "@/lib/platforms/types";
 
@@ -20,6 +21,7 @@ interface DashboardFiltersContextValue {
   isRefreshing: boolean;
   data: Record<ChannelId, ChannelState>;
   previousData: Record<ChannelId, ChannelState>;
+  dailyTrend: DailyTrendState;
   lastUpdatedAt: number | null;
 }
 
@@ -58,6 +60,7 @@ export function DashboardFiltersProvider({ children }: { children: ReactNode }) 
   };
 
   const { state: data, previousState: previousData, lastUpdatedAt } = useDashboardData(range, refreshNonce);
+  const dailyTrend = useDailyTrend(range, channels, refreshNonce);
 
   const isRefreshing = channels.some((c) => data[c].status === "loading");
 
@@ -75,10 +78,22 @@ export function DashboardFiltersProvider({ children }: { children: ReactNode }) 
       isRefreshing,
       data,
       previousData,
+      dailyTrend,
       lastUpdatedAt,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [period, customRange, range.dateFrom, range.dateTo, channels, data, previousData, isRefreshing, lastUpdatedAt],
+    [
+      period,
+      customRange,
+      range.dateFrom,
+      range.dateTo,
+      channels,
+      data,
+      previousData,
+      dailyTrend,
+      isRefreshing,
+      lastUpdatedAt,
+    ],
   );
 
   return <DashboardFiltersContext.Provider value={value}>{children}</DashboardFiltersContext.Provider>;

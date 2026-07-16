@@ -16,7 +16,7 @@ interface ChannelDailyState {
   previous: DailyPoint[];
 }
 
-interface DailyTrendState {
+export interface DailyTrendState {
   loading: boolean; // true só enquanto NENHUM canal ainda resolveu
   points: RevenueTrendPoint[];
   channelsWithData: ChannelId[];
@@ -93,9 +93,9 @@ function buildPoints(
 // bloquear os outros canais) — se a Amazon estiver lenta/fora do ar, o
 // gráfico já aparece com o MELI assim que ele responder, em vez de ficar
 // "carregando" por até ~2min esperando todo mundo responder junto.
-export function useDailyTrend(range: DateRange, channels: ChannelId[]): DailyTrendState {
+export function useDailyTrend(range: DateRange, channels: ChannelId[], refreshNonce: number): DailyTrendState {
   const channelsKey = channels.join(",");
-  const requestKey = `${range.dateFrom}|${range.dateTo}|${channelsKey}`;
+  const requestKey = `${range.dateFrom}|${range.dateTo}|${channelsKey}|${refreshNonce}`;
 
   const relevantChannels = (channelsKey.split(",").filter(Boolean) as ChannelId[]).filter((c) => REVENUE_TRACKED[c]);
 
@@ -137,7 +137,7 @@ export function useDailyTrend(range: DateRange, channels: ChannelId[]): DailyTre
     // range é recriado a cada render (novo objeto); usamos dateFrom/dateTo
     // (primitivos) como deps pra não re-disparar o efeito por identidade.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range.dateFrom, range.dateTo, channelsKey]);
+  }, [range.dateFrom, range.dateTo, channelsKey, refreshNonce]);
 
   const channelsWithData = relevantChannels.filter((c) => channelStates[c]?.status === "success");
   const channelsPending = relevantChannels.filter((c) => !channelStates[c] || channelStates[c].status === "loading");

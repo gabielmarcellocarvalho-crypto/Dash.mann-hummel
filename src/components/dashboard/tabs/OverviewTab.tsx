@@ -13,14 +13,12 @@ import { FunnelChart } from "../FunnelChart";
 import { CHANNELS, topProdutos } from "@/data/mock-dashboard";
 import { formatBRL2 } from "@/lib/format";
 import { compare } from "@/lib/compare";
-import { useDailyTrend } from "@/lib/use-daily-trend";
 import { useDashboardFilters } from "../DashboardDataContext";
 import { useRealInsights } from "../useRealInsights";
 
 export function OverviewTab() {
-  const { channels, data, previousData, range, periodLabel } = useDashboardFilters();
+  const { channels, data, previousData, periodLabel, dailyTrend } = useDashboardFilters();
   const insights = useRealInsights();
-  const dailyTrend = useDailyTrend(range, channels);
 
   const summaries = channels
     .map((c) => data[c].summary)
@@ -178,7 +176,11 @@ export function OverviewTab() {
         subtitle={`${periodLabel} vs período anterior · só MELI/Amazon (únicos com receita rastreada)`}
       >
         {dailyTrend.loading ? (
-          <p className="py-10 text-center text-[12.5px] text-text-3">Carregando série diária…</p>
+          <p className="py-10 text-center text-[12.5px] text-text-3">
+            Buscando série diária de{" "}
+            {dailyTrend.channelsPending.map((c) => CHANNELS.find((ch) => ch.id === c)!.name).join(", ")}
+            {dailyTrend.channelsPending.includes("amazon") && " — a Amazon pode levar mais de um minuto"}…
+          </p>
         ) : dailyTrend.channelsWithData.length === 0 ? (
           <p className="py-10 text-center text-[12.5px] text-text-3">
             Nenhum canal com receita rastreada disponível para o período/seleção atual.
