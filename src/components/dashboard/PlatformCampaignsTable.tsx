@@ -31,6 +31,22 @@ const CHANNEL_PERIOD_NOTE: Partial<Record<ChannelId, string>> = {
   amazon: "limitado a 60 dias pela Amazon",
 };
 
+type StatusFilter = "all" | "active" | "paused";
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "Todas" },
+  { key: "active", label: "Ativas" },
+  { key: "paused", label: "Pausadas" },
+];
+
+function normalizeStatus(status: string | null): "active" | "paused" | "other" {
+  if (!status) return "other";
+  const s = status.toUpperCase();
+  if (s === "ENABLED" || s === "ACTIVE") return "active";
+  if (s === "PAUSED") return "paused";
+  return "other";
+}
+
 type SortKey = "clicks" | "impressions" | "ctr" | "cpc" | "cost" | "roas" | "acos" | "revenue";
 
 const SORT_COLUMNS: { key: SortKey; label: string }[] = [
@@ -53,6 +69,7 @@ export function PlatformCampaignsTable() {
   const { channels, data, periodLabel } = useDashboardFilters();
   const [sortKey, setSortKey] = useState<SortKey>("cost");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -67,8 +84,9 @@ export function PlatformCampaignsTable() {
   const errorChannels = channels.filter((c) => data[c].status === "error");
   const readyChannels = channels.filter((c) => data[c].status === "success");
 
-  const campaigns = readyChannels
-    .flatMap((c) => data[c].campaigns)
+  const allCampaigns = readyChannels.flatMap((c) => data[c].campaigns);
+  const campaigns = allCampaigns
+    .filter((c) => statusFilter === "all" || normalizeStatus(c.status) === statusFilter)
     .sort((a, b) => {
       const diff = sortValue(a, sortKey) - sortValue(b, sortKey);
       return sortDir === "desc" ? -diff : diff;
@@ -105,9 +123,31 @@ export function PlatformCampaignsTable() {
         );
       })}
 
+      {allCampaigns.length > 0 && (
+        <div className="mb-3 flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-text-3">Status:</span>
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setStatusFilter(f.key)}
+              className={`cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors duration-150 ${
+                statusFilter === f.key
+                  ? "border-border-strong bg-background text-text-1"
+                  : "border-border/60 text-text-3 hover:text-text-1"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {campaigns.length === 0 && loadingChannels.length === 0 ? (
         <p className="py-6 text-center text-[12.5px] text-text-3">
-          Nenhuma campanha encontrada para os canais e período selecionados.
+          {statusFilter === "all"
+            ? "Nenhuma campanha encontrada para os canais e período selecionados."
+            : `Nenhuma campanha ${statusFilter === "active" ? "ativa" : "pausada"} encontrada para os canais e período selecionados.`}
         </p>
       ) : (
         <div className="overflow-x-auto">
