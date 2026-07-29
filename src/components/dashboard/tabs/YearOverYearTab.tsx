@@ -40,10 +40,25 @@ export function YearOverYearTab() {
 
       <Section title={`${channel.name} · 2026 vs 2025`} subtitle={row.nota}>
         <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-border">
+              {["Métrica", "2025", "2026", "Variação"].map((h, i) => (
+                <th
+                  key={h}
+                  className={`whitespace-nowrap pb-2.5 text-[10.5px] font-bold uppercase tracking-wider text-text-3 ${
+                    i === 0 ? "text-left" : "text-right"
+                  }`}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {row.metrics.map((m) => (
               <tr key={m.label} className="border-b border-dashed border-border last:border-0">
                 <td className="py-3 text-[13px] text-text-2">{m.label}</td>
+                <td className="py-3 text-right font-mono text-[13px] tabular-nums text-text-3">{m.value2025}</td>
                 <td className="py-3 text-right font-mono text-[15px] font-bold tabular-nums text-text-1">
                   {m.value}
                 </td>

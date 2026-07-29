@@ -38,7 +38,7 @@ export function ProductsTable({ products }: { products: ProductRow[] }) {
         <table className="w-full min-w-[560px] border-collapse">
           <thead>
             <tr className="border-b border-border">
-              {["Produto", "SKU", "Receita", "Pedidos", "Ticket Médio"].map((h, i) => (
+              {["Produto", "SKU", "Receita", "Pedidos", "Unidades", "Ticket Médio"].map((h, i) => (
                 <th
                   key={h}
                   className={`whitespace-nowrap pb-2.5 text-[10.5px] font-bold uppercase tracking-wider text-text-3 ${
@@ -59,6 +59,9 @@ export function ProductsTable({ products }: { products: ProductRow[] }) {
                   {formatBRL(p.receita)}
                 </td>
                 <td className="py-2.5 text-right font-mono text-[13px] text-text-2 tabular-nums">{p.pedidos}</td>
+                <td className="py-2.5 text-right font-mono text-[13px] text-text-2 tabular-nums">
+                  {p.unidades.toLocaleString("pt-BR")}
+                </td>
                 <td className="py-2.5 text-right font-mono text-[13px] text-text-2 tabular-nums">
                   {formatBRL2(p.ticketMedio)}
                 </td>

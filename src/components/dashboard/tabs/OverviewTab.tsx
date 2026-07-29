@@ -157,6 +157,9 @@ export function OverviewTab() {
       ? `Benchmark de mercado (peças automotivas): ${benchmarkRoas}x — ${channelName(bestRoasSummary.channelId)} está em ${bestRoasSummary.roas!.toFixed(2).replace(".", ",")}x (${(bestRoasSummary.roas! / benchmarkRoas).toFixed(1).replace(".", ",")}x o benchmark). Considera só canais com receita rastreada.`
       : `Benchmark de mercado (peças automotivas): ${benchmarkRoas}x de ROAS.`;
 
+  const skusVendidos = topProdutos.length;
+  const unidadesVendidas = topProdutos.reduce((sum, p) => sum + p.unidades, 0);
+
   return (
     <div className="flex flex-col gap-4">
       <AlertsStrip items={insights.slice(0, 4)} />
@@ -293,6 +296,20 @@ export function OverviewTab() {
       </div>
 
       <Section title="Top Produtos" subtitle="Ilustrativo (mock) · integração por SKU ainda não conectada">
+        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-background p-3.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-3">SKUs Vendidos</p>
+            <p className="mt-1 font-mono text-xl font-bold tabular-nums text-text-1">{skusVendidos}</p>
+            <p className="mt-0.5 text-[11px] text-text-3">produtos com venda no período (ilustrativo)</p>
+          </div>
+          <div className="rounded-lg border border-border bg-background p-3.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-3">Unidades Vendidas</p>
+            <p className="mt-1 font-mono text-xl font-bold tabular-nums text-text-1">
+              {unidadesVendidas.toLocaleString("pt-BR")}
+            </p>
+            <p className="mt-0.5 text-[11px] text-text-3">soma de unidades dos top produtos (ilustrativo)</p>
+          </div>
+        </div>
         <ProductsTable products={topProdutos} />
       </Section>
     </div>

@@ -221,6 +221,7 @@ export const insights: InsightItem[] = [
 // com filtro de intervalo de datas do ano anterior para o comparativo
 export interface YoyMetric {
   label: string;
+  value2025: string;
   value: string;
   change: string;
   positive: boolean;
@@ -239,40 +240,40 @@ export const yoyPorCanal: YoyChannel[] = [
   {
     channelId: "meli",
     metrics: [
-      { label: "Vendas", value: "R$ 279,5k", change: "+22%", positive: true },
-      { label: "ROAS", value: "9,84x", change: "+9%", positive: true },
-      { label: "Impressões", value: "18,4M", change: "+34%", positive: true },
-      { label: "Budget", value: "R$ 28,4k", change: "+12%", positive: true },
+      { label: "Vendas", value2025: "R$ 229,1k", value: "R$ 279,5k", change: "+22%", positive: true },
+      { label: "ROAS", value2025: "9,03x", value: "9,84x", change: "+9%", positive: true },
+      { label: "Impressões", value2025: "13,7M", value: "18,4M", change: "+34%", positive: true },
+      { label: "Budget", value2025: "R$ 25,4k", value: "R$ 28,4k", change: "+12%", positive: true },
     ],
     nota: "Crescimento consistente em todos os indicadores — canal prioritário para 2026.",
   },
   {
     channelId: "amazon",
     metrics: [
-      { label: "Vendas", value: "R$ 88,9k", change: "−14%", positive: false },
-      { label: "ROAS", value: "4,17x", change: "−19%", positive: false },
-      { label: "Impressões", value: "6,1M", change: "−8%", positive: false },
-      { label: "Cliques", value: "940", change: "−11%", positive: false },
+      { label: "Vendas", value2025: "R$ 103,4k", value: "R$ 88,9k", change: "−14%", positive: false },
+      { label: "ROAS", value2025: "5,15x", value: "4,17x", change: "−19%", positive: false },
+      { label: "Impressões", value2025: "6,6M", value: "6,1M", change: "−8%", positive: false },
+      { label: "Cliques", value2025: "1.056", value: "940", change: "−11%", positive: false },
     ],
     nota: "Queda de eficiência real. Requer revisão de campanhas antes de novos aportes.",
   },
   {
     channelId: "google",
     metrics: [
-      { label: "Vendas", value: "R$ 96,8k", change: "+31%", positive: true },
-      { label: "ROAS", value: "4,02x", change: "+6%", positive: true },
-      { label: "Impressões", value: "4,3M", change: "+18%", positive: true },
-      { label: "Cliques", value: "812", change: "+15%", positive: true },
+      { label: "Vendas", value2025: "R$ 73,9k", value: "R$ 96,8k", change: "+31%", positive: true },
+      { label: "ROAS", value2025: "3,79x", value: "4,02x", change: "+6%", positive: true },
+      { label: "Impressões", value2025: "3,6M", value: "4,3M", change: "+18%", positive: true },
+      { label: "Cliques", value2025: "706", value: "812", change: "+15%", positive: true },
     ],
     nota: "Melhor ano da conta — CTR e CPC seguem saudáveis.",
   },
   {
     channelId: "meta",
     metrics: [
-      { label: "Vendas", value: "R$ 47,2k", change: "−6%", positive: false },
-      { label: "ROAS", value: "2,53x", change: "−15%", positive: false },
-      { label: "Impressões", value: "9,8M", change: "+4%", positive: true },
-      { label: "Cliques", value: "15.240", change: "+8%", positive: true },
+      { label: "Vendas", value2025: "R$ 50,2k", value: "R$ 47,2k", change: "−6%", positive: false },
+      { label: "ROAS", value2025: "2,98x", value: "2,53x", change: "−15%", positive: false },
+      { label: "Impressões", value2025: "9,4M", value: "9,8M", change: "+4%", positive: true },
+      { label: "Cliques", value2025: "14.111", value: "15.240", change: "+8%", positive: true },
     ],
     nota: "Mais volume, menos eficiência — sinal de fadiga de criativo.",
   },
@@ -479,16 +480,17 @@ export interface ProductRow {
   sku: string;
   receita: number;
   pedidos: number;
+  unidades: number;
   ticketMedio: number;
 }
 
 export const topProdutos: ProductRow[] = [
-  { nome: "Filtro de Ar Motor X200", sku: "MH-AR-X200", receita: 84200, pedidos: 612, ticketMedio: 137.58 },
-  { nome: "Filtro de Óleo Diesel Y400", sku: "MH-OL-Y400", receita: 71600, pedidos: 548, ticketMedio: 130.66 },
-  { nome: "Filtro de Cabine Z100", sku: "MH-CB-Z100", receita: 58900, pedidos: 705, ticketMedio: 83.55 },
-  { nome: "Filtro de Combustível W300", sku: "MH-CB-W300", receita: 46300, pedidos: 391, ticketMedio: 118.41 },
-  { nome: "Kit Filtros Preventivos 4x1", sku: "MH-KIT-4X1", receita: 39800, pedidos: 264, ticketMedio: 150.76 },
-  { nome: "Filtro de Ar Industrial P900", sku: "MH-AR-P900", receita: 28100, pedidos: 187, ticketMedio: 150.27 },
+  { nome: "Filtro de Ar Motor X200", sku: "MH-AR-X200", receita: 84200, pedidos: 612, unidades: 612, ticketMedio: 137.58 },
+  { nome: "Filtro de Óleo Diesel Y400", sku: "MH-OL-Y400", receita: 71600, pedidos: 548, unidades: 548, ticketMedio: 130.66 },
+  { nome: "Filtro de Cabine Z100", sku: "MH-CB-Z100", receita: 58900, pedidos: 705, unidades: 705, ticketMedio: 83.55 },
+  { nome: "Filtro de Combustível W300", sku: "MH-CB-W300", receita: 46300, pedidos: 391, unidades: 391, ticketMedio: 118.41 },
+  { nome: "Kit Filtros Preventivos 4x1", sku: "MH-KIT-4X1", receita: 39800, pedidos: 264, unidades: 1056, ticketMedio: 150.76 },
+  { nome: "Filtro de Ar Industrial P900", sku: "MH-AR-P900", receita: 28100, pedidos: 187, unidades: 187, ticketMedio: 150.27 },
 ];
 
 // TODO: conectar Instagram Graph API — posts com melhor performance no período
