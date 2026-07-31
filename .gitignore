@@ -29,4 +29,4 @@ Thumbs.db
 
 # Planilhas com dados financeiros reais — já importadas pro banco (ver
 # scripts/seed-monthly-metrics.mjs), não versionamos os arquivos brutos.
-[MANN HUMMEL]*.csv
+\[MANN HUMMEL\]*.csv

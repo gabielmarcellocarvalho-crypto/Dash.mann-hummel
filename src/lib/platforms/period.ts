@@ -51,6 +51,12 @@ export function previousEquivalentRange(range: DateRange): DateRange {
   return { dateFrom: fmt(prevFrom), dateTo: fmt(prevTo) };
 }
 
+export function rangeDurationDays(range: DateRange): number {
+  const from = new Date(`${range.dateFrom}T00:00:00Z`);
+  const to = new Date(`${range.dateTo}T00:00:00Z`);
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
+}
+
 export function rangeLabel(range: DateRange): string {
   const [, fm, fd] = range.dateFrom.split("-");
   const [ty, tm, td] = range.dateTo.split("-");
