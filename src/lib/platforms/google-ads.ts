@@ -187,7 +187,7 @@ export async function fetchGoogleAdsDailySeries(range: DateRange): Promise<Daily
   const byDate = new Map<string, DailyPoint>();
   for (const row of results) {
     const date = row.segments.date;
-    const existing = byDate.get(date) ?? { date, cost: 0, clicks: 0, impressions: 0, revenue: 0 };
+    const existing = byDate.get(date) ?? { date, cost: 0, clicks: 0, impressions: 0, revenue: 0, units: 0 };
     existing.cost += row.metrics.costMicros ? Number(row.metrics.costMicros) / 1_000_000 : 0;
     existing.clicks += row.metrics.clicks ? Number(row.metrics.clicks) : 0;
     existing.impressions += row.metrics.impressions ? Number(row.metrics.impressions) : 0;

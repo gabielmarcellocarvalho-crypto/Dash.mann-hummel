@@ -42,5 +42,6 @@ export async function fetchAmazonDailySeries(range: DateRange): Promise<DailyPoi
     clicks: r.clicks,
     impressions: r.impressions,
     revenue: r.attributedSales30d,
+    units: r.attributedUnitsOrdered30d,
   }));
 }

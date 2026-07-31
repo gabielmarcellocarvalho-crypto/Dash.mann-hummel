@@ -23,3 +23,10 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+.vercel
+.env*.local
+
+# Planilhas com dados financeiros reais — já importadas pro banco (ver
+# scripts/seed-monthly-metrics.mjs), não versionamos os arquivos brutos.
+[MANN HUMMEL]*.csv

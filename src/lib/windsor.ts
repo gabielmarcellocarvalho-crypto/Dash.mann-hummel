@@ -174,6 +174,7 @@ const AMAZON_DAILY_FIELDS = [
   "sponsored_products_campaign__cost",
   "sponsored_products_campaign__impressions",
   "sponsored_products_campaign__attributedsales30d",
+  "sponsored_products_campaign__attributedunitsordered30d",
 ];
 
 export interface AmazonDailyRow {
@@ -182,6 +183,7 @@ export interface AmazonDailyRow {
   cost: number;
   impressions: number;
   attributedSales30d: number;
+  attributedUnitsOrdered30d: number;
 }
 
 // "date" como field agrupa a resposta por dia (convenção padrão dos
@@ -196,6 +198,7 @@ export async function fetchAmazonAdsDailySeries(dateFrom: string, dateTo: string
     cost: num(row, "cost"),
     impressions: num(row, "impressions"),
     attributedSales30d: num(row, "attributedsales30d"),
+    attributedUnitsOrdered30d: num(row, "attributedunitsordered30d"),
   }));
 }
 

@@ -151,5 +151,6 @@ export async function fetchMetaAdsDailySeries(range: DateRange): Promise<DailyPo
     clicks: r.clicks ? Number(r.clicks) : 0,
     impressions: r.impressions ? Number(r.impressions) : 0,
     revenue: 0, // Meta não tem receita rastreada nesta conta (ver REVENUE_TRACKED)
+    units: 0,
   }));
 }

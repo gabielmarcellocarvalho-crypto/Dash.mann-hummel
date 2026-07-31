@@ -22,6 +22,7 @@ export interface DailyPoint {
   clicks: number;
   impressions: number;
   revenue: number; // 0 quando o canal não tem revenueTracked
+  units: number; // unidades vendidas atribuídas — só > 0 quando revenueTracked
 }
 
 // Nem toda plataforma tem rastreamento real de valor de conversão configurado

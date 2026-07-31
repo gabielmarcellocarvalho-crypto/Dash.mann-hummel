@@ -166,6 +166,7 @@ interface RawMeliDailyRow {
   prints: number;
   cost: number;
   total_amount: number;
+  units_quantity: number;
 }
 
 export async function fetchMeliDailySeries(range: DateRange): Promise<DailyPoint[]> {
@@ -179,7 +180,7 @@ export async function fetchMeliDailySeries(range: DateRange): Promise<DailyPoint
   );
   url.searchParams.set("date_from", range.dateFrom);
   url.searchParams.set("date_to", range.dateTo);
-  url.searchParams.set("metrics", "clicks,prints,cost,total_amount");
+  url.searchParams.set("metrics", "clicks,prints,cost,total_amount,units_quantity");
   url.searchParams.set("metrics_summary", "false");
   url.searchParams.set("aggregation_type", "daily");
   url.searchParams.set("limit", "100");
@@ -201,5 +202,6 @@ export async function fetchMeliDailySeries(range: DateRange): Promise<DailyPoint
     clicks: r.clicks ?? 0,
     impressions: r.prints ?? 0,
     revenue: r.total_amount ?? 0,
+    units: r.units_quantity ?? 0,
   }));
 }
