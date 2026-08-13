@@ -8,9 +8,8 @@ import { StackedBar } from "../StackedBar";
 import { ProgressList } from "../ProgressList";
 import { AlertsStrip } from "../AlertsStrip";
 import { Highlights } from "../Highlights";
-import { ProductsTable } from "../ProductsTable";
 import { FunnelChart } from "../FunnelChart";
-import { CHANNELS, topProdutos } from "@/data/mock-dashboard";
+import { CHANNELS } from "@/data/mock-dashboard";
 import { formatBRL2 } from "@/lib/format";
 import { compare } from "@/lib/compare";
 import { useDashboardFilters } from "../DashboardDataContext";
@@ -66,6 +65,14 @@ export function OverviewTab() {
     (best, s) => (best === null || (s.roas ?? 0) > (best.roas ?? 0) ? s : best),
     null,
   );
+  // ACOS: quanto menor, melhor (é o inverso do ROAS) — só entre canais com
+  // ACOS calculável (receita rastreada e > 0).
+  const bestAcosSummary = revenueSummaries
+    .filter((s) => (s.acos ?? 0) > 0)
+    .reduce<typeof summaries[number] | null>(
+      (best, s) => (best === null || (s.acos ?? Infinity) < (best.acos ?? Infinity) ? s : best),
+      null,
+    );
   const topBudgetSummary = summaries.reduce<typeof summaries[number] | null>(
     (top, s) => (top === null || s.investimento > top.investimento ? s : top),
     null,
@@ -105,9 +112,9 @@ export function OverviewTab() {
       trend: roasCompare?.direction ?? "neutral",
     },
     {
-      label: "Melhor ROAS",
-      value: bestRoasSummary && (bestRoasSummary.roas ?? 0) > 0 ? `${bestRoasSummary.roas!.toFixed(2).replace(".", ",")}x` : "—",
-      note: bestRoasSummary ? channelName(bestRoasSummary.channelId) : "—",
+      label: "Melhor ACOS",
+      value: bestAcosSummary ? `${(bestAcosSummary.acos! * 100).toFixed(1).replace(".", ",")}%` : "—",
+      note: bestAcosSummary ? `${channelName(bestAcosSummary.channelId)} · menor custo sobre venda` : "Só canais com receita rastreada",
       trend: "neutral" as const,
     },
     {
@@ -156,9 +163,6 @@ export function OverviewTab() {
     bestRoasSummary && (bestRoasSummary.roas ?? 0) > 0
       ? `Benchmark de mercado (peças automotivas): ${benchmarkRoas}x — ${channelName(bestRoasSummary.channelId)} está em ${bestRoasSummary.roas!.toFixed(2).replace(".", ",")}x (${(bestRoasSummary.roas! / benchmarkRoas).toFixed(1).replace(".", ",")}x o benchmark). Considera só canais com receita rastreada.`
       : `Benchmark de mercado (peças automotivas): ${benchmarkRoas}x de ROAS.`;
-
-  const skusVendidos = topProdutos.length;
-  const unidadesVendidas = topProdutos.reduce((sum, p) => sum + p.unidades, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -294,24 +298,6 @@ export function OverviewTab() {
           )}
         </Section>
       </div>
-
-      <Section title="Top Produtos" subtitle="Ilustrativo (mock) · integração por SKU ainda não conectada">
-        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-2">
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-3">SKUs Vendidos</p>
-            <p className="mt-1 font-mono text-xl font-bold tabular-nums text-text-1">{skusVendidos}</p>
-            <p className="mt-0.5 text-[11px] text-text-3">produtos com venda no período (ilustrativo)</p>
-          </div>
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-3">Unidades Vendidas</p>
-            <p className="mt-1 font-mono text-xl font-bold tabular-nums text-text-1">
-              {unidadesVendidas.toLocaleString("pt-BR")}
-            </p>
-            <p className="mt-0.5 text-[11px] text-text-3">soma de unidades dos top produtos (ilustrativo)</p>
-          </div>
-        </div>
-        <ProductsTable products={topProdutos} />
-      </Section>
     </div>
   );
 }
