@@ -15,7 +15,7 @@ export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
     <div>
       <div className="mb-4 flex items-center gap-4">
         <span className="flex items-center gap-1.5 text-[12px] text-text-2">
-          <span className="h-2.5 w-2.5 rounded-sm border border-border-strong bg-transparent" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-success" aria-hidden="true" />
           Meta
         </span>
         <span className="flex items-center gap-1.5 text-[12px] text-text-2">
@@ -44,7 +44,7 @@ export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
                 >
                   <p className="mb-1 text-[11px] font-semibold text-text-1">{m.month}</p>
                   <p className="flex items-center gap-1.5 text-[11.5px] text-text-2">
-                    <span className="h-1.5 w-1.5 rounded-full border border-text-3" aria-hidden="true" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden="true" />
                     Meta: <span className="font-mono font-semibold text-text-1">{formatBRL(m.meta)}</span>
                   </p>
                   <p className="flex items-center gap-1.5 text-[11.5px] text-text-2">
@@ -63,9 +63,7 @@ export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
               )}
               <div className="flex h-32 w-full items-end justify-center gap-[3px]">
                 <div
-                  className={`w-full max-w-3.5 rounded-t-[3px] border border-dashed bg-transparent transition-colors duration-150 ${
-                    isHover ? "border-accent/70" : "border-border-strong/80"
-                  }`}
+                  className="w-full max-w-3.5 rounded-t-[3px] bg-gradient-to-t from-success/60 to-success shadow-[0_0_10px_rgba(34,197,94,0.35)] transition-all duration-300"
                   style={{ height: `${metaPct}%` }}
                   aria-hidden="true"
                 />

@@ -38,7 +38,7 @@ function GlanceViewsBars({ rows }: { rows: GlanceViewRow[] }) {
         <div key={r.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
           <div className="flex h-36 w-full items-end justify-center gap-[3px]">
             <div
-              className="w-full max-w-3 rounded-t-[3px] border border-dashed border-text-3/60 bg-white/[0.03] transition-all duration-300"
+              className="w-full max-w-3 rounded-t-[3px] bg-gradient-to-t from-success/60 to-success shadow-[0_0_10px_rgba(34,197,94,0.35)] transition-all duration-300"
               style={{ height: `${Math.max(2, ((r.views2025 ?? 0) / max) * 100)}%` }}
               title={`2025: ${(r.views2025 ?? 0).toLocaleString("pt-BR")}`}
             />
