@@ -4,9 +4,12 @@ import { useState } from "react";
 import type { GoalMonth } from "@/data/mock-dashboard";
 import { formatBRL } from "@/lib/format";
 
+// Barras lado a lado (Meta x Realizado) por mês — pedido explícito da Maria
+// em 12/08: a versão anterior (meta como linha tracejada + uma barra) "não é
+// muito interessante", ela quer duas barras visíveis por mês.
 export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(...months.map((m) => m.meta));
+  const max = Math.max(...months.map((m) => Math.max(m.meta, m.realizado ?? 0)), 1);
 
   return (
     <div>
@@ -20,10 +23,10 @@ export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
           Realizado
         </span>
       </div>
-      <div className="flex h-40 items-end justify-between gap-1.5 sm:gap-2.5">
+      <div className="flex h-40 items-end justify-between gap-2 sm:gap-3">
         {months.map((m, i) => {
-          const metaPct = Math.min(100, (m.meta / max) * 100);
-          const realizadoPct = m.realizado != null ? Math.min(100, (m.realizado / max) * 100) : 0;
+          const metaPct = Math.max(2, (m.meta / max) * 100);
+          const realizadoPct = m.realizado != null ? Math.max(2, (m.realizado / max) * 100) : 0;
           const isHover = hover === i;
           const pctDaMeta = m.realizado != null && m.meta > 0 ? (m.realizado / m.meta) * 100 : null;
 
@@ -58,19 +61,17 @@ export function GoalsBarChart({ months }: { months: GoalMonth[] }) {
                   )}
                 </div>
               )}
-              <div
-                className={`relative flex h-32 w-full max-w-7 items-end justify-center rounded-t-[3px] border border-dashed bg-transparent transition-colors duration-150 ${
-                  isHover ? "border-accent/70" : "border-border-strong/80"
-                }`}
-              >
+              <div className="flex h-32 w-full items-end justify-center gap-[3px]">
                 <div
-                  className="w-full rounded-t-[3px] bg-gradient-to-t from-accent/60 to-accent shadow-[0_0_12px_var(--color-accent-glow)] transition-all duration-300"
-                  style={{ height: `${Math.max(realizadoPct, m.realizado ? 3 : 0)}%` }}
+                  className={`w-full max-w-3.5 rounded-t-[3px] border border-dashed bg-transparent transition-colors duration-150 ${
+                    isHover ? "border-accent/70" : "border-border-strong/80"
+                  }`}
+                  style={{ height: `${metaPct}%` }}
                   aria-hidden="true"
                 />
-                <span
-                  className="absolute inset-x-0 border-t border-dashed border-text-2"
-                  style={{ bottom: `${metaPct}%` }}
+                <div
+                  className="w-full max-w-3.5 rounded-t-[3px] bg-gradient-to-t from-accent/60 to-accent shadow-[0_0_12px_var(--color-accent-glow)] transition-all duration-300"
+                  style={{ height: `${realizadoPct}%` }}
                   aria-hidden="true"
                 />
               </div>

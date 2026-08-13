@@ -8,13 +8,15 @@ import type { ChannelId } from "./platforms/types";
 export interface MonthlyChannelMetric {
   channelId: ChannelId;
   month: number; // 1-12
-  meta: number | null;
-  realizado: number | null;
+  meta: number | null; // meta de receita GERAL (todo o canal, não só ads)
+  realizado: number | null; // receita GERAL realizada
   receitaAnoAnterior: number | null;
   sazonalidade: number | null; // percentual, ex.: 9.0 = 9,0%
-  investimento: number | null;
+  investimento: number | null; // verba de ads investida
   units: number | null;
   unitsAnoAnterior: number | null;
+  adsMeta: number | null; // meta de receita atribuída a ADS (sub-conjunto do geral)
+  adsRealizado: number | null; // receita atribuída a ADS realizada
 }
 
 let schemaReady: Promise<void> | null = null;
@@ -33,10 +35,18 @@ function ensureSchema(): Promise<void> {
         investimento NUMERIC,
         units INTEGER,
         units_ano_anterior INTEGER,
+        ads_meta NUMERIC,
+        ads_realizado NUMERIC,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         PRIMARY KEY (channel_id, month)
       )
-    `.then(() => undefined);
+    `.then(async () => {
+      // Colunas adicionadas depois da criação original da tabela em produção —
+      // IF NOT EXISTS garante que ambientes já existentes recebam a migração
+      // sem precisar de um passo de migração separado.
+      await sql`ALTER TABLE monthly_channel_metrics ADD COLUMN IF NOT EXISTS ads_meta NUMERIC`;
+      await sql`ALTER TABLE monthly_channel_metrics ADD COLUMN IF NOT EXISTS ads_realizado NUMERIC`;
+    });
   }
   return schemaReady;
 }
@@ -49,9 +59,9 @@ export async function upsertMonthlyMetrics(rows: MonthlyChannelMetric[]): Promis
   for (const r of rows) {
     await sql`
       INSERT INTO monthly_channel_metrics
-        (channel_id, month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior, updated_at)
+        (channel_id, month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior, ads_meta, ads_realizado, updated_at)
       VALUES
-        (${r.channelId}, ${r.month}, ${r.meta}, ${r.realizado}, ${r.receitaAnoAnterior}, ${r.sazonalidade}, ${r.investimento}, ${r.units}, ${r.unitsAnoAnterior}, now())
+        (${r.channelId}, ${r.month}, ${r.meta}, ${r.realizado}, ${r.receitaAnoAnterior}, ${r.sazonalidade}, ${r.investimento}, ${r.units}, ${r.unitsAnoAnterior}, ${r.adsMeta}, ${r.adsRealizado}, now())
       ON CONFLICT (channel_id, month) DO UPDATE SET
         meta = EXCLUDED.meta,
         realizado = EXCLUDED.realizado,
@@ -60,6 +70,8 @@ export async function upsertMonthlyMetrics(rows: MonthlyChannelMetric[]): Promis
         investimento = EXCLUDED.investimento,
         units = EXCLUDED.units,
         units_ano_anterior = EXCLUDED.units_ano_anterior,
+        ads_meta = EXCLUDED.ads_meta,
+        ads_realizado = EXCLUDED.ads_realizado,
         updated_at = now()
     `;
   }
@@ -69,7 +81,7 @@ export async function fetchMonthlyMetrics(channelId: ChannelId): Promise<Monthly
   await ensureSchema();
   const sql = getSql();
   const rows = (await sql`
-    SELECT month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior
+    SELECT month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior, ads_meta, ads_realizado
     FROM monthly_channel_metrics
     WHERE channel_id = ${channelId}
     ORDER BY month ASC
@@ -85,5 +97,7 @@ export async function fetchMonthlyMetrics(channelId: ChannelId): Promise<Monthly
     investimento: r.investimento === null ? null : Number(r.investimento),
     units: r.units === null ? null : Number(r.units),
     unitsAnoAnterior: r.units_ano_anterior === null ? null : Number(r.units_ano_anterior),
+    adsMeta: r.ads_meta === null ? null : Number(r.ads_meta),
+    adsRealizado: r.ads_realizado === null ? null : Number(r.ads_realizado),
   }));
 }

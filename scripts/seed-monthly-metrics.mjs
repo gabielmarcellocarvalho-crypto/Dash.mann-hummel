@@ -17,10 +17,14 @@ await sql`
     investimento NUMERIC,
     units INTEGER,
     units_ano_anterior INTEGER,
+    ads_meta NUMERIC,
+    ads_realizado NUMERIC,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (channel_id, month)
   )
 `;
+await sql`ALTER TABLE monthly_channel_metrics ADD COLUMN IF NOT EXISTS ads_meta NUMERIC`;
+await sql`ALTER TABLE monthly_channel_metrics ADD COLUMN IF NOT EXISTS ads_realizado NUMERIC`;
 
 // month: 1=Jan ... 12=Dez. null = ainda não aconteceu / planilha não preencheu.
 const AMAZON = [
@@ -58,14 +62,56 @@ const MELI = [
 const GOOGLE_INVEST = { 1: 0.00, 2: 0.00, 3: 2107.09, 4: 2826.28, 5: 2374.49, 6: 4690.01, 7: 1258.58 };
 const META_INVEST = { 1: 0.00, 2: 0.00, 3: 229.10, 4: 2267.86, 5: 1119.19, 6: 5883.13, 7: 1682.71 };
 
-function upsert(channelId, rows) {
+// Meta/realizado de receita ESPECIFICAMENTE atribuída a Ads (sub-conjunto do
+// "geral" acima) — fonte: abas AMAZON / MERCADO LIVRE de
+// "[MANN HUMMEL] METAS 2026.xlsx" ("PLANEJAMENTO MENSAL (RECEBIDO x GERADO) - ADS"),
+// colunas Meta e Faturado. Pedido da Maria em 12/08: "adicionar as metas de
+// ads e pace de ads" (Mercado Livre) e "o que está ali [na Amazon] é o geral,
+// adicionar o de ads".
+const AMAZON_ADS = [
+  { month: 1, meta: 2952.30, realizado: 0.00 },
+  { month: 2, meta: 2074.80, realizado: 0.00 },
+  { month: 3, meta: 5352.10, realizado: 1292.99 },
+  { month: 4, meta: 6065.94, realizado: 4776.21 },
+  { month: 5, meta: 9462.84, realizado: 5167.21 },
+  { month: 6, meta: 10119.34, realizado: 5601.72 },
+  { month: 7, meta: 11549.34, realizado: 6344.99 },
+  { month: 8, meta: 1800.64, realizado: 2398.37 },
+  { month: 9, meta: 9910.04, realizado: null },
+  { month: 10, meta: 8654.24, realizado: null },
+  { month: 11, meta: 11896.44, realizado: null },
+  { month: 12, meta: 8736.14, realizado: null },
+];
+
+const MELI_ADS = [
+  { month: 1, meta: 19853.60, realizado: 0.00 },
+  { month: 2, meta: 31882.50, realizado: 16413.00 },
+  { month: 3, meta: 66778.40, realizado: 38195.48 },
+  { month: 4, meta: 82568.04, realizado: 53533.90 },
+  { month: 5, meta: 52431.44, realizado: 74928.36 },
+  { month: 6, meta: 40501.34, realizado: 81475.63 },
+  { month: 7, meta: 52990.44, realizado: 83596.40 },
+  { month: 8, meta: 95939.84, realizado: 40292.39 },
+  { month: 9, meta: 90574.74, realizado: null },
+  { month: 10, meta: 99257.44, realizado: null },
+  { month: 11, meta: 65531.54, realizado: null },
+  { month: 12, meta: 58016.24, realizado: null },
+];
+
+function adsByMonth(rows) {
+  return Object.fromEntries(rows.map((r) => [r.month, r]));
+}
+
+function upsert(channelId, rows, adsRows = []) {
+  const ads = adsByMonth(adsRows);
   return Promise.all(
-    rows.map(
-      (r) => sql`
+    rows.map((r) => {
+      const a = ads[r.month] ?? {};
+      return sql`
         INSERT INTO monthly_channel_metrics
-          (channel_id, month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior, updated_at)
+          (channel_id, month, meta, realizado, receita_ano_anterior, sazonalidade, investimento, units, units_ano_anterior, ads_meta, ads_realizado, updated_at)
         VALUES
-          (${channelId}, ${r.month}, ${r.meta}, ${r.realizado}, ${r.anoAnterior}, ${r.sazon}, ${r.invest}, ${r.units ?? null}, ${r.unitsAnt ?? null}, now())
+          (${channelId}, ${r.month}, ${r.meta}, ${r.realizado}, ${r.anoAnterior}, ${r.sazon}, ${r.invest}, ${r.units ?? null}, ${r.unitsAnt ?? null}, ${a.meta ?? null}, ${a.realizado ?? null}, now())
         ON CONFLICT (channel_id, month) DO UPDATE SET
           meta = EXCLUDED.meta,
           realizado = EXCLUDED.realizado,
@@ -74,9 +120,11 @@ function upsert(channelId, rows) {
           investimento = EXCLUDED.investimento,
           units = EXCLUDED.units,
           units_ano_anterior = EXCLUDED.units_ano_anterior,
+          ads_meta = EXCLUDED.ads_meta,
+          ads_realizado = EXCLUDED.ads_realizado,
           updated_at = now()
-      `,
-    ),
+      `;
+    }),
   );
 }
 
@@ -94,9 +142,9 @@ function upsertInvestOnly(channelId, investByMonth) {
   );
 }
 
-await upsert("amazon", AMAZON);
-await upsert("meli", MELI);
+await upsert("amazon", AMAZON, AMAZON_ADS);
+await upsert("meli", MELI, MELI_ADS);
 await upsertInvestOnly("google", GOOGLE_INVEST);
 await upsertInvestOnly("meta", META_INVEST);
 
-console.log("Seed concluído: monthly_channel_metrics populada (amazon, meli, google, meta).");
+console.log("Seed concluído: monthly_channel_metrics populada (amazon, meli, google, meta) — geral + ads.");

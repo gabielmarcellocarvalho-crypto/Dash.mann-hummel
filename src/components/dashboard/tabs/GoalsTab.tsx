@@ -12,35 +12,61 @@ import { GoalsTable } from "../GoalsTable";
 
 const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+// Só Amazon e Mercado Livre têm meta de receita de Ads separada da meta geral
+// importada da planilha (Google/Meta só têm investimento — sem meta de venda).
+const CHANNELS_WITH_ADS_GOAL: ChannelId[] = ["amazon", "meli"];
+
+type GoalsViewKey = "geral" | "ads";
+
 interface MonthlyMetricRow {
   month: number;
   meta: number | null;
   realizado: number | null;
   sazonalidade: number | null;
+  adsMeta: number | null;
+  adsRealizado: number | null;
 }
 
 interface GoalsState {
   status: "loading" | "success" | "error";
-  months: GoalMonth[];
+  rows: MonthlyMetricRow[];
   error: string | null;
 }
 
-function toGoalMonths(rows: MonthlyMetricRow[]): GoalMonth[] {
+function toGoalMonths(rows: MonthlyMetricRow[], view: GoalsViewKey): GoalMonth[] {
   return rows.map((r) => ({
     month: MONTH_NAMES[r.month - 1],
     sazonalidade: r.sazonalidade != null ? `${r.sazonalidade.toFixed(1).replace(".", ",")}%` : "—",
-    meta: r.meta ?? 0,
-    realizado: r.realizado,
+    meta: (view === "ads" ? r.adsMeta : r.meta) ?? 0,
+    realizado: view === "ads" ? r.adsRealizado : r.realizado,
   }));
+}
+
+// Título fica diferente do nome do canal usado no resto do dashboard: aqui a
+// visão "Geral" da Amazon mostra receita total (não só Ads) — manter "Amazon
+// Ads" no título confundia (pedido da Maria em 12/08: "tirar o Ads do título").
+function channelDisplayName(channelId: ChannelId, view: GoalsViewKey): string {
+  if (channelId === "amazon") return view === "ads" ? "Amazon Ads" : "Amazon";
+  if (channelId === "meli") return view === "ads" ? "Mercado Livre Ads" : "Mercado Livre";
+  return CHANNELS.find((c) => c.id === channelId)!.name;
 }
 
 export function GoalsTab() {
   const [selected, setSelected] = useState<ChannelId>(CHANNELS[0].id);
-  const [state, setState] = useState<GoalsState>({ status: "loading", months: [], error: null });
+  const [view, setView] = useState<GoalsViewKey>("geral");
+  const [state, setState] = useState<GoalsState>({ status: "loading", rows: [], error: null });
+  const [appliedChannel, setAppliedChannel] = useState<ChannelId>(selected);
+
+  // Padrão "ajustar estado durante a renderização": reseta pra loading assim
+  // que o canal muda, sem passar por um efeito (ver DashboardDataContext).
+  if (appliedChannel !== selected) {
+    setAppliedChannel(selected);
+    setState({ status: "loading", rows: [], error: null });
+    setView("geral");
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading", months: [], error: null });
 
     fetch(`/api/monthly-metrics?channel=${selected}`)
       .then(async (res) => {
@@ -50,11 +76,11 @@ export function GoalsTab() {
       })
       .then((json) => {
         if (cancelled) return;
-        setState({ status: "success", months: toGoalMonths(json.months), error: null });
+        setState({ status: "success", rows: json.months, error: null });
       })
       .catch((err: Error) => {
         if (cancelled) return;
-        setState({ status: "error", months: [], error: err.message });
+        setState({ status: "error", rows: [], error: err.message });
       });
 
     return () => {
@@ -62,8 +88,10 @@ export function GoalsTab() {
     };
   }, [selected]);
 
-  const channel = CHANNELS.find((c) => c.id === selected)!;
-  const months = state.months;
+  const showAdsToggle = CHANNELS_WITH_ADS_GOAL.includes(selected);
+  const activeView = showAdsToggle ? view : "geral";
+  const channelLabel = channelDisplayName(selected, activeView);
+  const months = toGoalMonths(state.rows, activeView);
 
   const metaAnual = months.reduce((sum, m) => sum + m.meta, 0);
   const realizadoAcumulado = months.reduce((sum, m) => sum + (m.realizado ?? 0), 0);
@@ -96,9 +124,26 @@ export function GoalsTab() {
         })}
       </div>
 
+      {showAdsToggle && (
+        <div className="flex gap-1.5 rounded-lg border border-border bg-surface p-1">
+          {(["geral", "ads"] as GoalsViewKey[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors duration-150 ${
+                activeView === v ? "bg-accent text-accent-foreground" : "text-text-3 hover:text-text-1"
+              }`}
+            >
+              {v === "geral" ? "Geral" : "Ads"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {state.status === "loading" ? (
         <div className="rounded-lg border border-border bg-surface p-6 text-center text-[12.5px] text-text-3">
-          Carregando metas de {channel.name}…
+          Carregando metas de {channelLabel}…
         </div>
       ) : state.status === "error" ? (
         <div className="rounded-lg border border-border bg-surface p-6 text-center text-[12.5px] text-text-3">
@@ -106,14 +151,14 @@ export function GoalsTab() {
         </div>
       ) : months.every((m) => m.meta === 0) ? (
         <div className="rounded-lg border border-border bg-surface p-6 text-center text-[12.5px] text-text-3">
-          {channel.name} ainda não tem meta/realizado importado da planilha.
+          {channelLabel} ainda não tem meta/realizado importado da planilha.
         </div>
       ) : (
         <>
           <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-text-3">
-                Pace — {channel.name} · 2026
+                Pace — {channelLabel} · 2026
               </p>
               <Badge tone={onTrack ? "success" : "warning"}>
                 {onTrack ? "Dentro do Ritmo" : "Atenção — Abaixo do Ritmo"}
