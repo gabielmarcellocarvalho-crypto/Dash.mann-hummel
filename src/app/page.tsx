@@ -10,6 +10,8 @@ import { ByChannelTab } from "@/components/dashboard/tabs/ByChannelTab";
 import { InsightsTab } from "@/components/dashboard/tabs/InsightsTab";
 import { YearOverYearTab } from "@/components/dashboard/tabs/YearOverYearTab";
 import { GoalsTab } from "@/components/dashboard/tabs/GoalsTab";
+import { AmazonVendorTab } from "@/components/dashboard/tabs/AmazonVendorTab";
+import { SellersTab } from "@/components/dashboard/tabs/SellersTab";
 
 // Instagram Orgânico fica fora do menu por enquanto: os dados dessa aba ainda
 // são 100% mock (nenhuma integração com a Instagram Graph API foi feita) e o
@@ -20,6 +22,8 @@ const TABS: TabDef[] = [
   { id: "insights", label: "Insights & Ações" },
   { id: "yoy", label: "Ano vs Ano" },
   { id: "goals", label: "Metas 2026" },
+  { id: "amazon-vendor", label: "Amazon Vendor" },
+  { id: "sellers", label: "Sellers Mercado Livre" },
 ];
 
 export default function Home() {
@@ -38,6 +42,8 @@ export default function Home() {
             {active === "insights" && <InsightsTab />}
             {active === "yoy" && <YearOverYearTab />}
             {active === "goals" && <GoalsTab />}
+            {active === "amazon-vendor" && <AmazonVendorTab />}
+            {active === "sellers" && <SellersTab />}
           </div>
         </main>
       </div>
