@@ -124,6 +124,80 @@ interface RawMetaDailyRow {
   impressions?: string;
 }
 
+export interface MetaCreative {
+  adId: string;
+  adName: string;
+  campaignId: string | null;
+  status: string | null;
+  imageUrl: string | null;
+}
+
+interface RawAdCreative {
+  id?: string;
+  thumbnail_url?: string;
+  image_url?: string;
+  object_story_spec?: {
+    link_data?: { picture?: string };
+    video_data?: { image_url?: string };
+  };
+}
+
+interface RawAd {
+  id: string;
+  name: string;
+  status: string;
+  campaign_id?: string;
+  creative?: RawAdCreative;
+}
+
+function extractCreativeImage(creative?: RawAdCreative): string | null {
+  if (!creative) return null;
+  return (
+    creative.thumbnail_url ??
+    creative.image_url ??
+    creative.object_story_spec?.link_data?.picture ??
+    creative.object_story_spec?.video_data?.image_url ??
+    null
+  );
+}
+
+// Não amarra num período específico: criativo é atributo do anúncio, não da
+// métrica diária. Mostra os anúncios mais recentes (ativos primeiro), que é o
+// que a Bruna precisa pra revisar arte — não um recorte por data de veiculação.
+export async function fetchMetaAdsCreatives(): Promise<MetaCreative[]> {
+  const adAccountId = process.env.META_AD_ACCOUNT_ID?.replace(/^act_/, "");
+  const accessToken = process.env.META_ACCESS_TOKEN;
+  if (!adAccountId || !accessToken) {
+    throw new Error("META_AD_ACCOUNT_ID/META_ACCESS_TOKEN não configurados");
+  }
+
+  const url = new URL(`https://graph.facebook.com/${API_VERSION}/act_${adAccountId}/ads`);
+  url.searchParams.set(
+    "fields",
+    "id,name,status,campaign_id,creative{id,thumbnail_url,image_url,object_story_spec}",
+  );
+  url.searchParams.set("effective_status", JSON.stringify(["ACTIVE", "PAUSED"]));
+  url.searchParams.set("limit", "60");
+  url.searchParams.set("access_token", accessToken);
+
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(`Meta Ads (criativos): ${json.error?.message ?? res.status}`);
+  }
+
+  const ads: RawAd[] = json.data ?? [];
+  return ads
+    .map((ad) => ({
+      adId: ad.id,
+      adName: ad.name,
+      campaignId: ad.campaign_id ?? null,
+      status: ad.status ?? null,
+      imageUrl: extractCreativeImage(ad.creative),
+    }))
+    .filter((ad) => ad.imageUrl !== null);
+}
+
 export async function fetchMetaAdsDailySeries(range: DateRange): Promise<DailyPoint[]> {
   const adAccountId = process.env.META_AD_ACCOUNT_ID?.replace(/^act_/, "");
   const accessToken = process.env.META_ACCESS_TOKEN;
